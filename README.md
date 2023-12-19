@@ -11,4 +11,4 @@ This terminal can be configured (language, colors etc)
 # Setup
 If you dont want to compile it yourself then you can install a executable
 
-![Releases](https://github.com/RealViper8/terminal/releases)
+[Releases](https://github.com/RealViper8/terminal/releases)
