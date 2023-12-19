@@ -1,4 +1,4 @@
-use std::env::current_dir;
+use std::env::{current_dir, set_current_dir};
 use std::{fs, io};
 use cmd::*;
 mod cmd;
@@ -76,6 +76,18 @@ fn main() {
             let second_arg = args.next().unwrap();
 
             match (first_arg, second_arg) {
+                ("cd", arg) => {
+                    if Path::new(arg).exists() {
+                        set_current_dir(arg).unwrap();
+                        if debug == true {
+                            println!("\x1b[0;36mCurrent Directory changed to \x1b[1;32m{}\x1b[0m", current_dir().unwrap().display());
+                        }
+                    } else {
+                        if debug == true {
+                            println!("\x1b[1;31mError: \x1b[0;31mFailed to change current directory: doesnt exist\x1b[0m");
+                        }
+                    }
+                }
                 ("color", "?") => {
                     println!("\x1b[1;36mColors:\x1b[0;32m");
                     Terminal::change_color(0);
@@ -176,8 +188,11 @@ fn main() {
                 }
                 ("g", second_arg) if second_arg.ends_with(".g") => {
                     if Path::new(second_arg.trim()).exists() {
-                        let lex = tokenize(fs::read_to_string(second_arg).unwrap());
+                        let _lex = tokenize(fs::read_to_string(second_arg).unwrap()).unwrap();
                     }
+                }
+                ("start", _) => {
+                    Command::new(second_arg).spawn().expect("failed to run command");
                 }
                 _ => ()
             }
@@ -191,6 +206,9 @@ fn main() {
                 println!("\t\x1b[1;32mdebug\t\x1b[0;32mTurn debug on or off");
                 println!("\t\x1b[1;32mexit\t\x1b[0;32mExit out of the terminal");
                 println!("\t\x1b[1;32mcolor\t\x1b[0;32mChange the color of the terminal");
+                println!("\t\x1b[1;32mcd\t\x1b[0;32mChange the current working directory");
+                println!("\t\x1b[1;32mprint (\"test\")\t\x1b[0;32mPrints text in this e.g test");
+                println!("\t\x1b[1;32mstart\t\x1b[0;32mStart a command usage start cmd or for unix start ls");
                 println!();
             }
             "cls" | "clear" => clear(),
@@ -208,6 +226,7 @@ fn main() {
                 println!("\x1b[1;36mg:\n");
                 println!("\t\x1b[0;32mIs a interpreter that I made usage is g <filename.g>");
             }
+            "cd" => println!("{}", current_dir().unwrap().display()),
             _ => {
                 if input.trim().contains("print") {
                     let mut tokens: Vec<Type> = vec![];
@@ -274,6 +293,9 @@ fn main() {
 
                     let mut final_str: String = String::new();
                     let mut previous: Type = Type::NONE;
+                    let mut numbers: i32 = 0;
+
+                    print!("Numbers: {}", numbers);
 
                     for i in tokens {
                         match i {
