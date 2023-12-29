@@ -8,7 +8,7 @@ use configparser::ini::Ini;
 use std::io::prelude::Write;
 use std::path::Path;
 use std::process::{Command, exit};
-use crate::interpreter::g::tokenize;
+use crate::interpreter::f;
 
 fn main() {
     let mut config = Ini::new();
@@ -186,9 +186,13 @@ fn main() {
 
                     println!("\n{}",string);
                 }
-                ("g", second_arg) if second_arg.ends_with(".g") => {
+                ("f", _) => {
                     if Path::new(second_arg.trim()).exists() {
-                        let _lex = tokenize(fs::read_to_string(second_arg).unwrap()).unwrap();
+                        let mut lexer = f::Lexer::new();
+                        lexer.generate_tokens(second_arg);
+                        let mut interpreter = f::Interpreter::new();
+                        interpreter.interpret_tokens(lexer.token_stack);
+                        print!("\n\n");
                     }
                 }
                 ("start", _) => {
@@ -230,9 +234,9 @@ fn main() {
                 println!("\t\x1b[0;32mprints message on screen\n\tExample: echo \"Hello, World!\"");
             }
             "color" => println!("\x1b[0;32mType color ? to view a list of colors\n\x1b[0;35mE.g color 1\n"),
-            "g" => {
-                println!("\x1b[1;36mg:\n");
-                println!("\t\x1b[0;32mIs a interpreter that I made usage is g <filename.g>");
+            "f" | "forth" => {
+                println!("\x1b[1;36mf:");
+                println!("\t\x1b[0;32mIs a interpreter for forth usage is f <filename>");
             }
             "dir" | "ls" => {
                 let mut dirs: Vec<String> = vec![];
