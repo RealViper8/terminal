@@ -23,6 +23,7 @@ if exist %app_name% (
     if exist "terminal.exe" (
          terminal
     ) else (
+        title Command Prompt
         echo [-] Terminal failed
         echo [+] Some files are missing in %cd%
     )
