@@ -1,7 +1,8 @@
 # terminal
 A Terminal for windows written in Rust
 
-Latest Version
+Latest Version:
+
 <img alt="latest" src="https://github.com/RealViper8/terminal/blob/master/img/latest.png?raw=true">
 
 # Config
