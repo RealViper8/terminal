@@ -220,6 +220,7 @@ fn main() {
                 println!("\t\x1b[1;32mdir\t\x1b[0;32mLists all directories in cd");
                 println!("\t\x1b[1;32mcd\t\x1b[0;32mChange the current working directory");
                 println!("\t\x1b[1;32mprint (\"test\")\t\x1b[0;32mPrints text in this e.g test");
+                println!("\t\x1b[1;32mf \t\x1b[0;32mFourth Interpreter");
                 println!("\t\x1b[1;32mstart\t\x1b[0;32mStart a command usage start cmd or for unix start ls");
                 println!();
             }
