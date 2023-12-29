@@ -192,7 +192,14 @@ fn main() {
                     }
                 }
                 ("start", _) => {
-                    Command::new(second_arg).spawn().expect("failed to run command");
+                    if let Err(e) = Command::new(second_arg).spawn() {
+                        println!("Failed to run command '{}' ", second_arg);
+                        if debug == true {
+                            println!("Error: {}", e);
+                        } else {
+                            println!("Command not found");
+                        }
+                    }
                 }
                 _ => ()
             }
@@ -206,6 +213,7 @@ fn main() {
                 println!("\t\x1b[1;32mdebug\t\x1b[0;32mTurn debug on or off");
                 println!("\t\x1b[1;32mexit\t\x1b[0;32mExit out of the terminal");
                 println!("\t\x1b[1;32mcolor\t\x1b[0;32mChange the color of the terminal");
+                println!("\t\x1b[1;32mdir\t\x1b[0;32mLists all directories in cd");
                 println!("\t\x1b[1;32mcd\t\x1b[0;32mChange the current working directory");
                 println!("\t\x1b[1;32mprint (\"test\")\t\x1b[0;32mPrints text in this e.g test");
                 println!("\t\x1b[1;32mstart\t\x1b[0;32mStart a command usage start cmd or for unix start ls");
@@ -226,6 +234,29 @@ fn main() {
                 println!("\x1b[1;36mg:\n");
                 println!("\t\x1b[0;32mIs a interpreter that I made usage is g <filename.g>");
             }
+            "dir" | "ls" => {
+                let mut dirs: Vec<String> = vec![];
+                let mut files: Vec<String> = vec![];
+
+                let paths = fs::read_dir("./").unwrap();
+
+                for path in paths {
+                    let path = path.unwrap().path().display().to_string().replace("./","");
+                    if !path.contains(".") {
+                        dirs.push(String::from(path))
+                    } else {
+                        files.push(String::from(path))
+                    }
+                }
+
+                if debug == true {
+                    println!("\x1b[1;32mDirectories: {}", dirs.iter().count());
+                    println!("\x1b[0;36mFiles: {}\n", files.iter().count());
+                }
+
+                println!("\x1b[1;32m{:?}",dirs);
+                println!("\x1b[0;36m{:?}\x1b[0m\n", files);
+            }
             "cd" => println!("{}", current_dir().unwrap().display()),
             _ => {
                 if input.trim().contains("print") {
@@ -240,7 +271,7 @@ fn main() {
                                 tokens.insert(count, Type::LPARREN);
                             }
                             (char, 1) => {
-                                if char != '"' {
+                                if char != '"' && char != '\'' {
                                     string.push(i);
                                 } else {
                                     string.push(i);
@@ -249,6 +280,15 @@ fn main() {
                                 }
                             }
                             ('"', _) => {
+                                if str == 2 {
+                                    string.push(i);
+                                    count += 1;
+                                } else {
+                                    string.push(i);
+                                    str += 1;
+                                }
+                            }
+                            ('\'', _) => {
                                 if str == 2 {
                                     string.push(i);
                                     count += 1;
