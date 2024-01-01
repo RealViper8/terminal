@@ -98,6 +98,12 @@ pub fn clear() {
 
 #[cfg(target_os = "macos")]
 pub fn clear() {
+    Command::new("sh").args(["-c","clear"]).spawn().unwrap();
+    thread::sleep(Duration::from_secs(1));
+}
+
+#[cfg(target_os = "linux")]
+pub fn clear() {
     Command::new("bash").args(["-c","clear"]).spawn().unwrap();
     thread::sleep(Duration::from_secs(1));
 }
