@@ -4,15 +4,27 @@ use cmd::*;
 mod cmd;
 mod interpreter;
 
+
 use configparser::ini::Ini;
 use std::io::prelude::Write;
 use std::path::Path;
-use std::process::{Command, exit};
+use std::process::Command;
+use std::process::exit;
 use crate::interpreter::f;
 
 fn main() {
     let mut config = Ini::new();
     let mut color = 1;
+
+    let home_directory: &str = if cfg!(target_os = "linux") {
+        "/bin"
+    } else if cfg!(target_os = "windows") {
+        "C:/Windows"
+    } else if cfg!(target_os = "macos") {
+        "~/Applications"
+    } else {
+        "/"
+    };
 
     #[cfg(target_os = "windows")]
     {
@@ -21,7 +33,7 @@ fn main() {
 
     if Path::new("config.ini").exists() {
         config.read(fs::read_to_string("config.ini").unwrap()).unwrap();
-
+        
         color = if config.get("terminal","color") != None  {
             if let Err(_) = config.get("terminal","color").unwrap().parse::<i8>() {
                 println!("\x1b[1;35mWarning: \x1b[0;31mIn config.ini in section terminal the value color should be a number between {}\n\x1b[0m", "0-6");
@@ -36,6 +48,8 @@ fn main() {
     } else {
         config.set("app","debug",Some("false".to_owned()));
         config.set("terminal","language",Some("english".to_owned()));
+        config.set("terminal","color",Some("1".to_owned()));
+        config.set("terminal","prompt",Some("default".to_owned()));
         config.set("terminal","color",Some("1".to_owned()));
         config.write("config.ini").unwrap();
     }
@@ -58,6 +72,7 @@ fn main() {
     let mut stdout = io::stdout();
 
     loop {
+        Terminal::change_color(color);
         let mut input: String = String::new();
         
         config.read(fs::read_to_string("config.ini").unwrap()).unwrap();
@@ -155,6 +170,7 @@ fn main() {
 
                         println!("\x1b[1;32mSuccesfully: \x1b[0;32mdeactivatet debug")
                     }
+                    continue;
                 }
                 ("color", second_arg) if !second_arg.is_empty() => {
                     if debug == true {
@@ -416,6 +432,63 @@ fn main() {
                     if Path::new("config.ini").exists() {
                         config.set("terminal", "prompt", Some(text));
                         config.write("config.ini").unwrap();
+                    }
+                } else {
+                    let current = current_dir().unwrap().display().to_string();
+                    let mut input_list = input.trim().split_whitespace();
+                    let first_arg = input_list.next();
+
+                    if debug == true {
+                        println!("{:?}", first_arg);
+                        println!("{:?}", input_list);
+                    }
+
+                    if first_arg == None {
+                        if debug == true {
+                            println!("Input is empty");
+                        }
+                    } else {
+                        set_current_dir(home_directory).unwrap();
+
+                        if cfg!(target_os = "windows") && Path::new(first_arg.unwrap()).exists() || Path::new(format!("{}.exe",first_arg.unwrap()).trim()).exists() {
+                            if let Err(e) = Command::new(first_arg.unwrap()).spawn() {
+                                if debug == true {
+                                    println!("\x1b[1;31mError: {}", e);
+                                } else {
+                                    println!("\x1b[1;31mError: \x1b[0;31mFailed to run `{}`: Doesnt exist", first_arg.unwrap());
+                                }
+                            } else {
+                                if debug == true {
+                                    println!("`{}` succesfully ran\n", first_arg.unwrap());
+                                }
+                            }
+                        } else if cfg!(target_os = "linux") && Path::new(first_arg.unwrap()).exists() {
+                            if let Err(e) = Command::new(first_arg.unwrap()).spawn() {
+                                if debug == true {
+                                    println!("\x1b[1;31mError: {}", e);
+                                } else {
+                                    println!("\x1b[1;31mError: \x1b[0;31mFailed to run `{}`: Doesnt exist", first_arg.unwrap());
+                                }
+                            } else {
+                                if debug == true {
+                                    println!("`{}` succesfully ran\n", first_arg.unwrap());
+                                }
+                            }
+                        } else if cfg!(target_os = "mcaos") && Path::new(first_arg.unwrap()).exists() {
+                            if let Err(e) = Command::new(first_arg.unwrap()).spawn() {
+                                if debug == true {
+                                    println!("\x1b[1;31mError: {}", e);
+                                } else {
+                                    println!("\x1b[1;31mError: \x1b[0;31mFailed to run `{}`: Doesnt exist", first_arg.unwrap());
+                                }
+                            } else {
+                                if debug == true {
+                                    println!("`{}` succesfully ran\n", first_arg.unwrap());
+                                }
+                            }
+                        }
+    
+                        set_current_dir(current).unwrap();
                     }
                 }
             }
