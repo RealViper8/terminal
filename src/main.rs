@@ -4,7 +4,6 @@ use cmd::*;
 mod cmd;
 mod interpreter;
 
-
 use configparser::ini::Ini;
 use std::io::prelude::Write;
 use std::path::Path;
@@ -451,13 +450,13 @@ fn main() {
                         if Path::new(home_directory).exists() {
                             set_current_dir(home_directory).unwrap();
                         } else {
-                            println!("\x1b[1;31mError: \x1b[0;31mFailed to launch command `{}` ", first_arg.unwrap());
+                            println!("\x1b[1;31mError: \x1b[0;31mFailed to launch `{}`: Doesnt exist\n", first_arg.unwrap());
                             continue;
                         }
                        
 
                         if cfg!(target_os = "windows") && Path::new(first_arg.unwrap()).exists() || Path::new(format!("{}.exe",first_arg.unwrap()).trim()).exists() {
-                            if let Err(e) = Command::new(first_arg.unwrap()).spawn() {
+                            if let Err(e) = Command::new(first_arg.unwrap()).status() {
                                 if debug == true {
                                     println!("\x1b[1;31mError: {}", e);
                                 } else {
@@ -469,7 +468,7 @@ fn main() {
                                 }
                             }
                         } else if cfg!(target_os = "linux") && Path::new(first_arg.unwrap()).exists() {
-                            if let Err(e) = Command::new(first_arg.unwrap()).spawn() {
+                            if let Err(e) = Command::new(first_arg.unwrap()).status() {
                                 if debug == true {
                                     println!("\x1b[1;31mError: {}", e);
                                 } else {
@@ -481,7 +480,7 @@ fn main() {
                                 }
                             }
                         } else if cfg!(target_os = "mcaos") && Path::new(first_arg.unwrap()).exists() {
-                            if let Err(e) = Command::new(first_arg.unwrap()).spawn() {
+                            if let Err(e) = Command::new(first_arg.unwrap()).status() {
                                 if debug == true {
                                     println!("\x1b[1;31mError: {}", e);
                                 } else {
