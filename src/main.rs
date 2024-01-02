@@ -31,7 +31,7 @@ fn main() {
             }
         } else {
             1
-        }
+        };
 
     } else {
         config.set("app","debug",Some("false".to_owned()));
@@ -59,7 +59,23 @@ fn main() {
 
     loop {
         let mut input: String = String::new();
-        write!(stdout, "{}\x1b[0;32m$: ", current_dir().unwrap().display()).unwrap();
+        
+        config.read(fs::read_to_string("config.ini").unwrap()).unwrap();
+
+        if Path::new("config.ini").exists() {
+            if config.get("terminal","prompt").is_none() {
+                write!(stdout, "{}\x1b[0;32m$: ", current_dir().unwrap().display()).unwrap();
+            } else {
+                if config.get("terminal","prompt").unwrap() == "default" || config.get("terminal","prompt").unwrap() == "Default" {
+                    config.remove_key("terminal", "prompt");
+                    write!(stdout, "{}\x1b[0;32m$: ", current_dir().unwrap().display()).unwrap();
+                } else {
+                    write!(stdout, "{}\x1b[0;32m$: ", config.get("terminal","prompt").unwrap()).unwrap();
+                }
+            }
+            
+        }
+
         stdout.flush().unwrap();
         match (io::stdin().read_line(&mut input), debug) {
             (Ok(n), true) => println!("Bytes read: {}\n", n),
@@ -78,9 +94,16 @@ fn main() {
             match (first_arg, second_arg) {
                 ("cd", arg) => {
                     if Path::new(arg).exists() {
-                        set_current_dir(arg).unwrap();
-                        if debug == true {
-                            println!("\x1b[0;36mCurrent Directory changed to \x1b[1;32m{}\x1b[0m", current_dir().unwrap().display());
+                        if let Err(e) = set_current_dir(arg) {
+                            if debug == true {
+                                println!("\x1b[1;31mError: {}", e);
+                            } else {
+                                println!("\x1b[1;31mError: \x1b[0;31mFailed to change cd to {}:\x1b[0;36m No permission\x1b[0m", second_arg);
+                            }
+                        } else {
+                            if debug == true {
+                                println!("\x1b[1;36mCurrent Directory changed to \x1b[1;32m{}\x1b[0m", current_dir().unwrap().display());
+                            }
                         }
                     } else {
                         if debug == true {
@@ -108,6 +131,14 @@ fn main() {
                     println!("\t5\tIts White");
                     Terminal::change_color(6);
                     println!("\t6\tIts Magenta");
+                    Terminal::change_color(7);
+                    println!("\t7\tIts Dark Green");
+                    Terminal::change_color(8);
+                    println!("\t8\tIts Dark Blue");
+                    Terminal::change_color(9);
+                    println!("\t9\tIts Yellow");
+                    Terminal::change_color(10);
+                    println!("\t10\tIts Cyan");
                     println!();
                 }
                 ("debug", second_arg) if !second_arg.is_empty() => {
@@ -142,50 +173,6 @@ fn main() {
                         config.write("config.ini").unwrap();
                     }
                 }
-                ("print", second_arg) if !second_arg.is_empty() => {
-                    let mut tokens: Vec<Type> = vec![];
-                    let mut count: usize = 0;
-                    let mut string = String::new();
-                    let mut str = 0;
-
-                    for i in input.trim().replace(first_arg,"").chars() {
-                        match (i, str) {
-                            ('(', _) => {
-                                tokens.insert(count, Type::LPARREN);
-                            }
-
-                            (char, 1) => {
-                                if char != '"' {
-                                    string.push(i);
-                                } else {
-                                    string.push(i);
-                                    tokens.insert(count, Type::STRING(string.clone().replace('\"',"")));
-                                    str += 1;
-                                }
-                            }
-                            ('"', _) => {
-                                if str == 2 {
-                                    string.push(i);
-                                    count += 1;
-                                } else {
-                                    string.push(i);
-                                    str += 1;
-                                }
-                            }
-                            (')', _) => {
-                                tokens.insert(count, Type::RPARREN);
-                                count += 1;
-                            }
-                            _ => ()
-                        }
-                    }
-
-                    if debug == true {
-                        println!("Tokens: {:?}\nString: {}",tokens, string.trim());
-                    }
-
-                    println!("\n{}",string);
-                }
                 ("f", _) => {
                     if Path::new(second_arg.trim()).exists() {
                         let mut lexer = f::Lexer::new();
@@ -194,6 +181,27 @@ fn main() {
                         interpreter.interpret_tokens(lexer.token_stack);
                         print!("\n\n");
                     }
+                }
+                ("prompt", "--help" | "-help" | "?") => {        
+                    println!("\x1b[1;36mprompt:");
+                    println!("\t\x1b[0;32mPrompts a custom message instead of the current directory\n\tExample: prompt Hello, World!");
+                    println!("\t\x1b[0;36mInfo: to restore do prompt default");
+                }
+                ("prompt", second_arg) => {
+                    let mut config = Ini::new();
+
+                    if Path::new("config.ini").exists() {
+                        config.read(fs::read_to_string("config.ini").unwrap()).unwrap();
+                        config.set("terminal","prompt", Some(second_arg.to_string()));
+                    } else {
+                        config.set("terminal","prompt", Some(second_arg.to_string()));
+                    }
+
+                    config.write("config.ini").unwrap();
+                }
+                ("start", "--help" | "-help" | "?") => {
+                    println!("\x1b[1;36mstart:");
+                    println!("\t\x1b[0;32mStarts a command\n\tExample: start help");
                 }
                 ("start", _) => {
                     if let Err(e) = Command::new(second_arg).spawn() {
@@ -220,18 +228,24 @@ fn main() {
                 println!("\t\x1b[1;32mdir\t\x1b[0;32mLists all directories in cd");
                 println!("\t\x1b[1;32mcd\t\x1b[0;32mChange the current working directory");
                 println!("\t\x1b[1;32mprint (\"test\")\t\x1b[0;32mPrints text in this e.g test");
-                println!("\t\x1b[1;32mf \t\x1b[0;32mFourth Interpreter");
+                println!("\t\x1b[1;32mf \t\x1b[0;32mForth Interpreter");
                 println!("\t\x1b[1;32mstart\t\x1b[0;32mStart a command usage start cmd or for unix start ls");
+                println!("\t\x1b[1;32mpwd\t\x1b[0;32mShow the current path");
+                println!("\t\x1b[1;32mprompt\t\x1b[0;32mChange the prompt message to something else");
                 println!();
             }
+            "pwd" => println!("\x1b[0m{}\n", current_dir().unwrap().display()),
             "cls" | "clear" => clear(),
             "credits" | "title" => prompt_credits(),
-            "exit" => exit(0),
+            "exit" => {
+                print!("\x1b[0m");
+                exit(0)
+            },
             "debug" => {
                 println!("\x1b[0;35mE.g:\n\t\x1b[0;32mdebug on\n\t\x1b[0;31mdebug off");
             }
             "echo" => {
-                println!("\x1b[1;36mecho:\n");
+                println!("\x1b[1;36mecho:");
                 println!("\t\x1b[0;32mprints message on screen\n\tExample: echo \"Hello, World!\"");
             }
             "color" => println!("\x1b[0;32mType color ? to view a list of colors\n\x1b[0;35mE.g color 1\n"),
@@ -395,8 +409,14 @@ fn main() {
                         }
                     }
 
-
                     println!("\n{}",final_str);
+                } else if input.trim().starts_with("prompt") {
+                    let text: String = input.trim().replace("prompt", "");
+
+                    if Path::new("config.ini").exists() {
+                        config.set("terminal", "prompt", Some(text));
+                        config.write("config.ini").unwrap();
+                    }
                 }
             }
         }
