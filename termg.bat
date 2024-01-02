@@ -9,19 +9,19 @@ set first_title=tasklist /fi "imagename eq cmd.exe" /fo list /v | find "itel"
 
 if exist %app_name% (
     %app_name%
-    cls
 
+    cls
     if %UILanguage% == de-DE (
         echo Language is : DE
         title %first_title%
     ) else (
+        echo Language is : %UILanguage%
         title %first_title%
     )
-
     color 07
 ) else (
     if exist "terminal.exe" (
-         terminal
+        terminal
     ) else (
         title Command Prompt
         echo [-] Terminal failed
