@@ -521,7 +521,7 @@ fn main() {
                 } else {
                     let mut input_list = input.trim().split_whitespace();
                     let first_arg = input_list.next();
-                    
+
                     if debug == true {
                         println!("{:?}", first_arg);
                         println!("{:?}", input_list);
@@ -535,6 +535,7 @@ fn main() {
                        continue;
                     } else {
                         if Path::new(home_directory).exists() {
+                            set_current_dir(home_directory).unwrap();
                             if cfg!(target_os = "windows") {
                                 if let Err(e) = Command::new(first_arg.unwrap()).current_dir(home_directory).status() {
                                     if debug == true {
@@ -572,6 +573,7 @@ fn main() {
                                     }
                                 }
                             }
+                            set_current_dir(current).unwrap();
                         } else {
                             println!("\x1b[1;31mError: \x1b[0;31mFailed to launch `{}`: Doesnt exist\n", first_arg.unwrap());
                             continue;
