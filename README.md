@@ -1,11 +1,11 @@
 # terminal
-A Terminal for windows written in Rust
+A Terminal for windows, macOS, linux written in Rust
 
-Version 1.0:
+Latest Version:
+
+![Latest](https://raw.githubusercontent.com/RealViper8/terminal/master/img/latest.png)
 
 Configurable terminal
-
-<img alt="latest" src="https://github.com/RealViper8/terminal/blob/master/img/latest.png?raw=true">
 
 <img width="155" alt="config" src="https://github.com/RealViper8/terminal/assets/101727162/31023325-1883-4137-bfd6-4412c2a37f2f">
 
