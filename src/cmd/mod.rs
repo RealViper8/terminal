@@ -7,6 +7,7 @@ use crossterm::{
     style::{Color, SetBackgroundColor, SetForegroundColor}
 };
 use crossterm::style::Color::Reset;
+pub mod arguments;
 
 pub struct Terminal {
     pub title: String
