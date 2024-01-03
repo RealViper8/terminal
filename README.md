@@ -1,5 +1,5 @@
 # terminal
-A Terminal for windows written in Rust
+A Terminal for windows, macOS, linux written in Rust
 
 Latest Version:
 
