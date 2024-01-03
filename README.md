@@ -31,6 +31,7 @@ steps to open
 For linux and macOS:
   1. chmod +x app
   2. ./app
+     
   OR
   sh termgstart.sh
 
