@@ -7,6 +7,7 @@ mod cmd;
 mod interpreter;
 
 use configparser::ini::Ini;
+use interpreter::math::MathInterpreter;
 use std::io::prelude::Write;
 use std::path::Path;
 use std::process::Command;
@@ -31,6 +32,8 @@ fn help() {
     println!("\t\x1b[1;32mviewcf\t\x1b[0;32mLists all the configs of config.ini");
     println!("\t\x1b[1;32mcredits\t\x1b[0;32mShows credits");
     println!("\t\x1b[1;32mcheck\t\x1b[0;32mChecks if file or directory exists");
+    println!("\t\x1b[1;32mcheck_path\t\x1b[0;32mChecks if path exists");
+    println!("\t\x1b[1;32mmath\t\x1b[0;32mLaunch math interpreter");
     println!();
 }
 
@@ -41,7 +44,7 @@ fn main() {
 
     let mut config = Ini::new();
     let mut color = 1;
-    let commands = vec!["cd", "help", "color", "print", "editcf", "edit", "check", "check_path"];
+    let commands = vec!["cd", "help", "color", "print", "editcf", "edit", "check", "check_path", "math"];
     let config_dir = current_dir().unwrap().display().to_string();
 
     let home_directory: &str = if cfg!(target_os = "linux") {
@@ -175,6 +178,18 @@ fn main() {
             let second_arg = args.next().unwrap();
 
             match (first_arg, second_arg) {
+                ("math", arg) => {
+                    let mut interpreter = MathInterpreter::new();
+                    if let Err(e) = interpreter.evaluate(arg) {
+                        if debug == true {
+                            println!("\x1b[1;31mError: \x1b[0;31m{}\x1b[0m\n", e);
+                        } else {
+                            println!("\x1b[1;31mError: \x1b[0;31mFailed to evaluate math expression: \x1b[0;31m{}\x1b[0m\n", e);
+                        }
+                    } else {
+                        println!("{}\n", interpreter.evaluate(arg).unwrap());
+                    }
+                }
                 ("cd", arg) => {
                     if Path::new(arg).exists() {
                         if let Err(e) = set_current_dir(arg) {
