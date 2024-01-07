@@ -1,5 +1,5 @@
 # terminal
-A Terminal for windows, macOS, linux written in Rust
+A Terminal for windows, macOS, linux written in Rust to reset the configs just delete the config.ini and then start the terminal again
 
 Latest Version:
 
