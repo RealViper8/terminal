@@ -29,6 +29,8 @@ fn help() {
     println!("\t\x1b[1;32mprompt\t\x1b[0;32mChange the prompt message to something else");
     println!("\t\x1b[1;32meditcf\t\x1b[0;32mEdits a config option from config.ini");
     println!("\t\x1b[1;32mviewcf\t\x1b[0;32mLists all the configs of config.ini");
+    println!("\t\x1b[1;32mcredits\t\x1b[0;32mShows credits");
+    println!("\t\x1b[1;32mcheck\t\x1b[0;32mChecks if file or directory exists");
     println!();
 }
 
@@ -39,7 +41,7 @@ fn main() {
 
     let mut config = Ini::new();
     let mut color = 1;
-    let commands = vec!["cd", "help", "color", "print", "editcf", "edit"];
+    let commands = vec!["cd", "help", "color", "print", "editcf", "edit", "check", "check_path"];
     let config_dir = current_dir().unwrap().display().to_string();
 
     let home_directory: &str = if cfg!(target_os = "linux") {
@@ -118,7 +120,7 @@ fn main() {
         exit(0)
     }
     
-    prompt_credits();
+    prompt_credits(None);
     Terminal::change_color(color);
 
     let mut stdout = io::stdout();
@@ -317,6 +319,34 @@ fn main() {
                     config.write("config.ini").unwrap();
                     set_current_dir(current).unwrap();
                 }
+                ("check" | "check_path", second_arg) => {
+                    if Path::new(second_arg.trim()).exists() {
+                        println!("\x1b[1;32mPath: \x1b[0;32m'{}' exists\x1b[0m\n", second_arg);
+                    } else {
+                        println!("\x1b[1;31mPath: \x1b[0;31m'{}' does not exist\x1b[0m\n", second_arg);
+                    }
+                }
+                (first_arg, _) if first_arg.contains("ch") || first_arg.contains("ck") => {
+                    println!("Did you mean check_path?");
+                }
+                (first_arg, _) if first_arg.contains("ed") || first_arg.contains("it") => {
+                    println!("Did you mean editcf?");
+                }
+                (first_arg, _) if first_arg.contains("pr") || first_arg.contains("om") => {
+                    println!("Did you mean prompt?");
+                }
+                (first_arg, _) if first_arg.contains("st") || first_arg.contains("rt") => {
+                    println!("Did you mean start?");
+                }
+                (first_arg, _) if first_arg.contains("cl") || first_arg.contains("ls") => {
+                    println!("Did you mean clear?");
+                }
+                (first_arg, _) if first_arg.contains("de") || first_arg.contains("bg") => {
+                    println!("Did you mean debug?");
+                }
+                (first_arg, _) if first_arg.contains("vi") || first_arg.contains("ew") => {
+                    println!("Did you mean viewcf?");
+                }
                 _ => ()
             }
         }
@@ -327,7 +357,7 @@ fn main() {
             }
             "pwd" => println!("\x1b[0m{}\n", current_dir().unwrap().display()),
             "cls" | "clear" => clear(),
-            "credits" | "title" => prompt_credits(),
+            "credits" | "title" => prompt_credits(Some(true)),
             "exit" => {
                 if debug == true {
                     println!("\x1b[0;36mExiting process with Code 0");
@@ -335,6 +365,12 @@ fn main() {
                 print!("\x1b[0m");
                 exit(0);
             },
+            first_arg if first_arg.contains("he") || first_arg.contains("lp") => {
+                println!("Did you mean help?");
+            }
+            first_arg if first_arg.contains("ex") || first_arg.contains("it") => {
+                println!("Did you mean exit?");
+            }
             "viewcf" | "view" => {
                 set_current_dir(&config_dir).unwrap();
                 println!("{}", fs::read_to_string("config.ini").unwrap());

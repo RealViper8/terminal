@@ -27,9 +27,14 @@ pub enum Type {
     STRING(String),
 }
 
-pub fn prompt_credits() {
+pub fn prompt_credits(name: Option<bool>) {
     execute!(stdout(), SetForegroundColor(Color::Cyan)).unwrap();
-    println!("--- Command Prompt ---\n");
+    if name != None && name == Some(true) {
+        println!("--- Command Prompt ---");
+        println!("  Made by realviper8\n");
+    } else {
+        println!("--- Command Prompt ---\n");
+    }
     execute!(stdout(), SetForegroundColor(Reset)).unwrap();
 }
 
