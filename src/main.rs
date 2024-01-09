@@ -14,7 +14,11 @@ use std::process::Command;
 use std::process::exit;
 use crate::interpreter::f;
 
-fn help() {
+
+fn help(debug: bool, font: Option<&String>) {
+    if debug == true {
+        println!("Font: {:?}", font);
+    }
     println!("\x1b[1;36mhelp:");
     println!("\t\x1b[1;32mhelp\t\x1b[0;32mShows this menu");
     println!("\t\x1b[1;32mclear\t\x1b[0;32mClears the terminal");
@@ -32,12 +36,14 @@ fn help() {
     println!("\t\x1b[1;32mviewcf\t\x1b[0;32mLists all the configs of config.ini");
     println!("\t\x1b[1;32mcredits\t\x1b[0;32mShows credits");
     println!("\t\x1b[1;32mcheck\t\x1b[0;32mChecks if file or directory exists");
-    println!("\t\x1b[1;32mcheck_path\t\x1b[0;32mChecks if path exists");
-    println!("\t\x1b[1;32mmath\t\x1b[0;32mLaunch math interpreter");
+    println!("\t\x1b[1;32mmath\t\x1b[0;32mUse math interpreter e.g math 2+2");
+    println!("\t\x1b[1;32mignore-warnings\t\x1b[0;32mIgnores warnings at startup");
     println!();
 }
 
 fn main() {
+    let mut warnings = 0;
+    let mut warnings_text: Vec<String> = vec![];
     let mut check_args: Vec<String> = args().collect();
     check_args.remove(0);
 
@@ -46,6 +52,12 @@ fn main() {
     let mut color = 1;
     let commands = vec!["cd", "help", "color", "print", "editcf", "edit", "check", "check_path", "math"];
     let config_dir = current_dir().unwrap().display().to_string();
+    let mut ls = String::from("default");
+
+    // FONT is now experimental please don't use it
+    let mut font = String::from("default");
+    let mut clear_type = String::from("default");
+    let mut ignore_warnings = false;
 
     let home_directory: &str = if cfg!(target_os = "linux") {
         "/bin"
@@ -67,7 +79,8 @@ fn main() {
         
         color = if config.get("terminal","color") != None  {
             if let Err(_) = config.get("terminal","color").unwrap().parse::<i8>() {
-                println!("\x1b[1;35mWarning: \x1b[0;31mIn config.ini in section terminal the value color should be a number between {}\n\x1b[0m", "0-6");
+                warnings_text.push(format!("\x1b[1;33mWarning: \x1b[0;33mcolor value should be a number between {} and {} in config.ini\nUsing default wich is {}\x1b[0m", 0, 10, "1/blue\n").to_string());
+                warnings += 1;
                 1
             } else {
                 config.get("terminal","color").unwrap().parse::<i8>().unwrap()
@@ -76,16 +89,65 @@ fn main() {
             1
         };
 
+        ignore_warnings = if config.get("terminal","ignore-warnings") != None  {
+            if let Err(_) = config.get("terminal","ignore-warnings").unwrap().parse::<bool>() {
+                false
+            } else {
+                if config.get("terminal","ignore-warnings").unwrap() == "true" {
+                    true
+                } else {
+                    false
+                }
+            }
+        } else {
+            false
+        };
+
+        ls = if config.get("terminal","ls") != None {
+            if config.get("terminal","ls").unwrap() == "list" {
+                String::from("list")
+            } else if config.get("terminal", "ls").unwrap() == "list2" {
+                String::from("list2")
+            } else {
+                String::from("default")
+            }
+        } else {
+            "default".to_string()
+        };
+
+        font = if config.get("terminal", "font") != None {
+            if config.get("terminal", "font").unwrap() == "bold" {
+                "bold".to_string()
+            } else {
+                "default".to_string()
+            }
+        } else {
+            String::from("default")
+        };
+
+        clear_type = if config.get("terminal","clear") != None {
+            if config.get("terminal","clear").unwrap().to_uppercase() == "ANSI" {
+                String::from("ansi").to_uppercase()
+            } else {
+                String::from("default")
+            }
+        } else {
+            String::from("default")
+        }
+
     } else {
         config.set("app","debug",Some("false".to_owned()));
         config.set("terminal","color",Some("1".to_owned()));
         config.set("terminal","prompt",Some("default".to_owned()));
+        config.set("terminal","ls",Some("default".to_owned()));
+        config.set("terminal","clear",Some("ansi".to_owned()));
         config.write("config.ini").unwrap();
     }
 
     let mut debug = if config.get("app","debug") != None {
         if let Err(_) = config.get("app","debug").unwrap().parse::<bool>() {
-            println!("\x1b[1;31mError: \x1b[0;31mfailed to convert debug value to boolean\x1b[0m");
+            warnings_text.push("Warning: debug value should be true or false in config.ini\nUsing default value: false".to_string());
+            warnings += 1;
             Terminal::change_color(color);
             false
         } else {
@@ -94,6 +156,16 @@ fn main() {
     } else {
         false
     };
+
+    if ignore_warnings == false && warnings >= 1 {
+        let mut warn = 1;
+        for warning in warnings_text {
+            println!("\x1b[1;33m{}: \x1b[0;33m{}\x1b[0m", warn, warning);
+            warn += 1;
+        }
+        println!("\n\x1b[1;33mWarnings: {}\x1b[0m", warnings);
+        println!("\x1b[0;36mType ignore-warnings to ignore warnings !\n\x1b[0m");
+    }
 
     if check_args.len() >= 1 {
         let mut final_args: Vec<String> = vec![];
@@ -111,7 +183,7 @@ fn main() {
         let arg_1 = final_args.index(0);
 
         if arg_1 == "help" {
-            help();
+            help(debug, Some(&font));
         } else if arg_1 == "cmd" {
             if cfg!(target_os = "windows") {
                 Command::new("cmd").args(["start","cmd"]).status().unwrap();
@@ -123,10 +195,8 @@ fn main() {
         exit(0)
     }
     
-    prompt_credits(None);
+    prompt_credits(None, Some(&font));
     Terminal::change_color(color);
-
-    let mut stdout = io::stdout();
 
     loop {
         let current = &*current_dir().unwrap().display().to_string();
@@ -136,33 +206,42 @@ fn main() {
         if Path::new("config.ini").exists() {
             config.read(fs::read_to_string("config.ini").unwrap()).unwrap();
             if config.get("terminal","prompt").is_none() {
-                write!(stdout, "{}\x1b[0;32m$: ", current_dir().unwrap().display()).unwrap();
+                print!("{}\x1b[1;32m$: ", current_dir().unwrap().display());
             } else {
                 if config.get("terminal","prompt").unwrap() == "default" {
                     config.remove_key("terminal", "prompt");
-                    write!(stdout, "{}\x1b[0;32m$: ", current_dir().unwrap().display()).unwrap();
+                    print!("{}\x1b[0;32m$: ", current_dir().unwrap().display());
                 } else {
-                    write!(stdout, "{}\x1b[0;32m$: ", config.get("terminal","prompt").unwrap()).unwrap();
+                    print!("{}\x1b[0;32m$: ", config.get("terminal","prompt").unwrap());
                 }
-            }   
+            }
         } else {
             let current_d = current_dir().unwrap().display().to_string();
             set_current_dir(config_dir.clone()).unwrap();
+            if let Err(e) = fs::read_to_string("config.ini") {
+                if debug == true {
+                    println!("\x1b[1;31mError: \x1b[0;31m{}", e);
+                    println!("This happens if you delete config.ini while running! Start again the terminal to fix it\x1b[0m")
+                } else {
+                    println!("\x1b[1;31mError: \x1b[0;31mfailed to read config file\nThis happens if you delete config.ini while running! Start again the terminal to fix it\x1b[0m");
+                }
+                exit(1)
+            }
             config.read(fs::read_to_string("config.ini").unwrap()).unwrap();
             if config.get("terminal","prompt").is_none() {
-                write!(stdout, "{}\x1b[0;32m$: ", current).unwrap();
+                print!("{}\x1b[0;32m$: ", current);
             } else {
                 if config.get("terminal","prompt").unwrap() == "default" {
                     config.remove_key("terminal", "prompt");
-                    write!(stdout, "{}\x1b[0;32m$: ", current).unwrap();
+                    print!("{}\x1b[0;32m$: ", current);
                 } else {
-                    write!(stdout, "{}\x1b[0;32m$: ", config.get("terminal","prompt").unwrap()).unwrap();
+                    print!("{}\x1b[0;32m$: ", config.get("terminal","prompt").unwrap());
                 }
             }
             set_current_dir(current_d).unwrap();
         }
 
-        stdout.flush().unwrap();
+        io::stdout().flush().unwrap();
         match (io::stdin().read_line(&mut input), debug) {
             (Ok(n), true) => println!("Bytes read: {}\n", n),
             (Err(_) , false) => println!("\x1b[1;31mError: \x1b[0;31mfailed to readline\x1b[0m"),
@@ -368,11 +447,39 @@ fn main() {
 
         match &*input.trim() {
             "help" => {
-                help();
+                help(debug, Some(&font));
+            }
+            "ignore-warnings" | "ignore-warning" => {
+                if ignore_warnings == false {
+                    ignore_warnings = true;
+                    println!("\x1b[1;32mInfo: \x1b[0;32mIgnoring warnings is set on\x1b[0m\n");
+                } else {
+                    ignore_warnings = false;
+                    println!("\x1b[1;31mInfo: \x1b[0;31mIgnoring warnings is set off\x1b[0m\n");
+                }
+                set_current_dir(&config_dir).unwrap();
+                config.set("terminal","ignore-warnings", Some(ignore_warnings.to_string()));
+                config.write("config.ini").unwrap();
             }
             "pwd" => println!("\x1b[0m{}\n", current_dir().unwrap().display()),
-            "cls" | "clear" => clear(),
-            "credits" | "title" => prompt_credits(Some(true)),
+            "cls" | "clear" => {
+                match &*clear_type {
+                    "default" => {
+                        if debug == true {
+                            println!("\x1b[0;36mClearing screen...");
+                        }
+                        clear();
+                    }
+                    "ANSI" => {
+                        if debug == true {
+                            println!("\x1b[0;36mClearing screen... with ANSI escape codes");
+                        }
+                        clear_screen();
+                    },
+                    _ => clear(),
+                }
+            },
+            "credits" | "title" => prompt_credits(Some(true), Some(&font)),
             "exit" => {
                 if debug == true {
                     println!("\x1b[0;36mExiting process with Code 0");
@@ -422,9 +529,19 @@ fn main() {
                     println!("\x1b[1;32mDirectories: {}", dirs.iter().count());
                     println!("\x1b[0;36mFiles: {}\n", files.iter().count());
                 }
-
-                println!("\x1b[1;32m{:?}",dirs);
-                println!("\x1b[0;36m{:?}\x1b[0m\n", files);
+                
+                if ls == "default".to_string() {
+                    println!("\x1b[1;32m{}", dirs.join(" "));
+                    println!("\x1b[0;36m{}", files.join(" "));
+                } else if ls == "list".to_string() {
+                    println!("\x1b[1;32m{:?}", dirs);
+                    println!("\x1b[0;36m{:?}", files);
+                } else if ls == "list2".to_string() {
+                    println!("\x1b[1;32m{}", dirs.join("\n"));
+                    println!("\x1b[0;36m{}", files.join("\n"));
+                }
+                
+                println!("\x1b[0m");
             }
             "cd" => println!("{}", current_dir().unwrap().display()),
             _ => {

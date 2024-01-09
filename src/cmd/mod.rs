@@ -27,13 +27,22 @@ pub enum Type {
     STRING(String),
 }
 
-pub fn prompt_credits(name: Option<bool>) {
+pub fn prompt_credits(name: Option<bool>, font: Option<&String>) {
     execute!(stdout(), SetForegroundColor(Color::Cyan)).unwrap();
     if name != None && name == Some(true) {
-        println!("--- Command Prompt ---");
-        println!("  Made by realviper8\n");
+        if !font.is_none() && font == Some(&"bold".to_string()) {
+            println!(r#"--- 𝐂𝐨𝐦𝐦𝐚𝐧𝐝 𝐏𝐫𝐨𝐦𝐩𝐭 ---"#);
+            println!(r#"  𝐌𝐚𝐝𝐞 𝐛𝐲 𝐫𝐞𝐚𝐥𝐯𝐢𝐩𝐞𝐫𝟖{}"#, "\n");
+        } else {
+            println!("--- Command Prompt ---");
+            println!("  Made by realviper8\n");
+        }
     } else {
-        println!("--- Command Prompt ---\n");
+        if !font.is_none() && font == Some(&"bold".to_string()) {
+            println!(r#"--- 𝐂𝐨𝐦𝐦𝐚𝐧𝐝 𝐏𝐫𝐨𝐦𝐩𝐭 ---{}"#,"\n");
+        } else {
+            println!("--- Command Prompt ---\n");
+        }
     }
     execute!(stdout(), SetForegroundColor(Reset)).unwrap();
 }
@@ -96,20 +105,24 @@ impl Func for Terminal {
     }
 }
 
+pub fn clear_screen() {
+    print!("\x1B[2J\x1B[1;1H");
+}
+
 #[cfg(target_os = "windows")]
 pub fn clear() {
     Command::new("cmd").args(["/C","cls"]).spawn().unwrap();
-    thread::sleep(Duration::from_secs(1));
+    thread::sleep(Duration::new(0,500));
 }
 
 #[cfg(target_os = "macos")]
 pub fn clear() {
     Command::new("sh").args(["-c","clear"]).spawn().unwrap();
-    thread::sleep(Duration::from_secs(1));
+    thread::sleep(Duration::new(0, 1000));
 }
 
 #[cfg(target_os = "linux")]
 pub fn clear() {
     Command::new("bash").args(["-c","clear"]).spawn().unwrap();
-    thread::sleep(Duration::from_secs(1));
+    thread::sleep(Duration::new(0, 50000000));
 }
