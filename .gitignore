@@ -3,3 +3,4 @@
 launcher
 config.ini
 gui.py
+*.exe
