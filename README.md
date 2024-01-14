@@ -19,6 +19,10 @@ path=/bin   => is the option
 
 color=1     => set the default color when you open the terminal
 
+ls=list2
+OR
+ls=list
+
 [app]
 
 debug=off => set on if you have a error and want a detailed look on the issue
