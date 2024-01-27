@@ -1,7 +1,7 @@
 # terminal
 A Terminal for windows, macOS, linux written in Rust to reset the configs just delete the config.ini and then start the terminal again
 
-Latest Version:
+1.0.3 Version:
 
 ![Latest](https://raw.githubusercontent.com/RealViper8/terminal/master/img/latest.png)
 
