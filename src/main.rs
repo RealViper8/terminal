@@ -37,6 +37,7 @@ fn help(debug: bool, font: Option<&String>) {
     println!("\t\x1b[1;32mcredits\t\x1b[0;32mShows credits");
     println!("\t\x1b[1;32mcheck\t\x1b[0;32mChecks if file or directory exists");
     println!("\t\x1b[1;32mmath\t\x1b[0;32mUse math interpreter e.g math 2+2");
+    println!("\t\x1b[1;32mviewfile config.ini\t\x1b[0;32mPrints the contents of a file in this e.g the contents of the config.ini");
     println!("\t\x1b[1;32mignore-warnings\t\x1b[0;32mIgnores warnings at startup");
     println!();
 }
@@ -50,7 +51,7 @@ fn main() {
 
     let mut config = Ini::new();
     let mut color = 1;
-    let commands = vec!["cd", "help", "color", "print", "editcf", "edit", "check", "check_path", "math"];
+    let commands = vec!["cd", "help", "color", "print", "editcf", "edit", "check", "check_path", "math", "viewfile"];
     let config_dir = current_dir().unwrap().display().to_string();
     let mut ls = String::from("default");
 
@@ -288,6 +289,15 @@ fn main() {
                         }
                     }
                 }
+                ("viewfile", arg) if !arg.is_empty() => {
+                    if(Path::new(arg)).exists() {
+                        for i in fs::read_to_string(arg).unwrap().lines() {
+                            println!("{}", i);
+                        }
+                    } else {
+                        println!("\x1b[1;31m Error: \x1b[0;31mFile doesnt exist\x1b[0m");
+                    }
+                }
                 ("color", "?") => {
                     println!("\x1b[1;36mColors:\x1b[0;32m");
                     Terminal::change_color(0);
@@ -448,6 +458,34 @@ fn main() {
         match &*input.trim() {
             "help" => {
                 help(debug, Some(&font));
+            }
+            "math" => {
+                println!("\nType exit or close to exit !\n");
+                let mut input: String = String::new();
+                let mut stdout = io::stdout();
+
+                loop {
+                    write!(stdout, "\x1b[0;32mCalculation: \x1b[0;36m").unwrap();
+                    stdout.flush().unwrap();
+                    io::stdin().read_line(&mut input).expect("failed to readline");
+                    print!("\x1b[0m");
+                    io::stdout().flush().unwrap();
+                    if input.trim() != "exit" && input.trim() != "close" {
+                        let mut interpreter = MathInterpreter::new();
+                        if let Err(e) = interpreter.evaluate(&*input.trim()) {
+                            if debug == true {
+                                println!("\x1b[1;31mError: \x1b[0;31m{}\x1b[0m\n", e);
+                            } else {
+                                println!("\x1b[1;31mError: \x1b[0;31mFailed to evaluate math expression: \x1b[0;31m{}\x1b[0m\n", e);
+                            }
+                        } else {
+                            println!("\x1b[1;32mResult: \x1b[0;32m{}\x1b[0m\n", interpreter.evaluate(&*input.trim()).unwrap());
+                        }
+                        input = "".to_string();
+                    } else {
+                        break;
+                    }
+                }
             }
             "ignore-warnings" | "ignore-warning" => {
                 if ignore_warnings == false {
