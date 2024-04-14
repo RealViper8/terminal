@@ -1,0 +1,6 @@
+/target
+*.o
+launcher
+config.ini
+gui.py
+*.exe
