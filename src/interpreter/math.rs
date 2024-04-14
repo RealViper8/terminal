@@ -1,5 +1,5 @@
-use std::str::Chars;
 use std::iter::Peekable;
+use std::str::Chars;
 
 pub struct MathInterpreter;
 
@@ -91,6 +91,8 @@ impl MathInterpreter {
             }
         }
 
-        number_str.parse::<f64>().map_err(|_| "Invalid number".to_string())
+        number_str
+            .parse::<f64>()
+            .map_err(|_| "Invalid number".to_string())
     }
 }
